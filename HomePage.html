@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Now Boarding: Gate Freshman → Gate Senior</title>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- p5.js + sound -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.10.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.10.0/addons/p5.sound.min.js"></script>
+
+  <script src="HomePage.js" defer></script>
+</head>
+<body>
+ <h1 class="board-title">Now Boarding: Gate Freshman → Gate Senior</h1>
+<h4 class="board-subtitle">Click a gate to board that year’s page</h4>
+
+  <div id="sketch"></div>
+
+  <div class="controls">
+    <button id="toggle-sound">Play / Stop Music</button>
+    <label>Volume:
+      <input id="vol" type="range" min="0" max="1" step="0.01" value="0.5" />
+      <span id="volVal">0.50</span>
+        <span id="music-label">Play Music</span>
+    </label>
+  </div>
+</body>
+
+</html>

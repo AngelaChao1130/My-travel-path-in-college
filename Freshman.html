@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Freshman — City Hunt</title>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- p5.js + sound -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.10.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.10.0/addons/p5.sound.min.js"></script>
+
+  <script src="Freshman.js" defer></script>
+</head>
+<body class="freshman">
+  <div class="title-box"><h1>Welcome to board on Freshman Gate, and let's city hunt</h1></div>
+  <div class="equal-length-lines"><h5>"First winter break trip with my high school friends. The city was freezing, and covid was still everywhere, so we wore our masks the whole time. Even then, it felt good just walking together, grabbing hot drinks to warm up, and taking pictures under the glowing billboards. Covid made everything feel a little different, but the energy of the city and being with my friends made it unforgettable."  </h5></div>
+<h4 class="subtitle">Follow the hint and guess where I travel ~</h4>
+  <div id="sketch"></div>
+
+  <div class="controls">
+    <button id="search-mode">Search for Clues</button>
+    <button id="next-memory">Next City ➜</button>
+    <button id="back-home">Back to Gates</button>
+
+    <!-- NEW: Guess form -->
+    <form id="guess-form" class="guess" autocomplete="off" style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+      <input id="guess-input" type="text" placeholder="Type the city…" aria-label="City guess" style="padding:6px 10px; flex:1;">
+      <button id="guess-submit" type="submit">Guess</button>
+      <span id="guess-feedback" aria-live="polite" style="min-width:90px;"></span>
+    </form>
+  </div>
+</body>
+</html>
