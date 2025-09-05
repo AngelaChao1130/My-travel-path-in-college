@@ -133,14 +133,7 @@ h1 { margin: 16px 0 8px; }
   }
 }
 
-html, body { margin: 0; padding: 0; }
-body { overflow: auto; }      
-#sketch canvas { display:block; width:100%; height:auto; }
 
-.controls {
-  display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
-  padding:10px 12px;
-}
 
 /*  Airport board style */
 .board-title {
