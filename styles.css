@@ -43,7 +43,7 @@ body.senior {
 #sketch canvas {
   display: block;
   margin: 0 auto;
-  touch-action: none; /* prevents page scroll while dragging */
+  touch-action: pan-y pinch-zoom; /* allow vertical scroll + pinch zoom */
 }
 
 /* ---------- Controls container ---------- */
