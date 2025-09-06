@@ -138,12 +138,7 @@ function draw() {
 // interaction 
 function mouseMoved()   { if (searchMode) setFlash(mouseX, mouseY); }
 function mouseDragged() { if (searchMode) setFlash(mouseX, mouseY); }
-function touchMoved() {
-  if (searchMode) {
-    setFlash(mouseX, mouseY);
-    return false; // block scroll only in flashlight mode
-  }
-}
+function touchMoved()   { if (searchMode) setFlash(mouseX, mouseY); return false; }
 function setFlash(x, y) { flashX = x; flashY = y; }
 
 //responsive resize 
