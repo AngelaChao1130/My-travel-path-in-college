@@ -7,8 +7,8 @@ const SCENES = [
 // answers
 const ANSWERS = {
   "New York": ["new york", "nyc", "new york city"],
-  "Paris":    ["paris", "paris france", "france"],
-  "Spain":    ["spain", "barcelona", "madrid"]
+  "Paris":    ["paris","france"],
+  "Spain":    ["spain", "barcelona"]
 };
 
 // music resume
@@ -132,7 +132,7 @@ function draw() {
   // hint text
   fill(255); noStroke();
   textSize(constrain(int(min(width, height) * 0.032), 12, 18));
-  text(searchMode ? "Drag or move to aim the flashlight" : "Click “Search for Clues”", width/2, 20);
+  text(searchMode ? "Drag or move to aim the flashlight" : "Click “Search for Clues”", width/2, 7);
 }
 
 // interaction 
