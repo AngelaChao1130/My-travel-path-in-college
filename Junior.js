@@ -2,16 +2,22 @@ const W = 450, H = 550; //Will change later
 const HOLE_DIAM = 210;
 
 const SCENES = [
-  { name: "Boston", bg: "assets/boston.jpg" }, //Will change
-  { name: "Las Vegas",    bg: "assets/vegas.jpg" }, //Will change
-  { name: "Hawaii",    bg: "assets/hawaii.jpg" } //Will change
+  { name: "Toronto", bg: "assets/toronto.jpg" }, //Will change
+  { name: "Miami",    bg: "assets/miami.jpg" }, //Will change
+  { name: "Orlando",    bg: "assets/orlando.jpg" }, //Will change
+   { name: "Arizona",    bg: "assets/arizona.jpg" },
+    { name: "Cancun",    bg: "assets/cancun.jpg" },
+     { name: "Alaska",    bg: "assets/alaska.jpg" }
 ];
 
 // Accept common aliases for answers
 const ANSWERS = {
-  "Boston": ["boston"],
-  "Las Vegas":["las vegas", "vegas"], ////Will change
-  "Hawaii":    ["honolulu","hawaii"]
+  "Toronto": ["canada","toronto"],
+  "Miami":["miami"], ////Will change
+  "Orlando": ["orlando"],
+  "Arizona": ["page","antelope", "arizona"],
+  "Cancun": ["mexico", "cancun"],
+  "Alaska": ["anchorage","alaska"]
 };
 
 // music resume key (shared with Home)
@@ -136,7 +142,7 @@ function draw() {
   image(cover, 0, 0, width, height);
 
   fill(255); noStroke(); textSize(14);
-  text(searchMode ? "Drag or move to aim the flashlight" : "Click “Search for Clues”", width/2, 20);
+  text(searchMode ? "Drag or move to aim the flashlight" : "Click “Search for Clues”", width/2, 7);
 }
 
 // flashlight movement

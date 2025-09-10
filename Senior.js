@@ -1,34 +1,29 @@
-const W = 450, H = 550; //Will change later 
-const HOLE_DIAM = 210;
-
+// scenes
 const SCENES = [
-  { name: "Boston", bg: "assets/boston.jpg" }, //Will change
-  { name: "Las Vegas",    bg: "assets/vegas.jpg" }, //Will change
-  { name: "Hawaii",    bg: "assets/hawaii.jpg" } //Will change
+  { name: "Japan", bg: "assets/tokyo.jpg" },
+  { name: "Joshua Tree",    bg: "assets/joshua tree.jpg" },
+  { name: "Chicago",    bg: "assets/chicago.jpg" }
 ];
-
-// Accept common aliases for answers
+// answers
 const ANSWERS = {
-  "Boston": ["boston"],
-  "Las Vegas":["las vegas", "vegas"], ////Will change
-  "Hawaii":    ["honolulu","hawaii"]
+  "Japan": ["japan", "tokyo", "fuji"],
+  "Joshua Tree": ["joshua tree","palm springs", "joshua tree national park"],
+  "Chicago":    ["chi city", "chicago"]
 };
 
-// music resume key (shared with Home)
+// music resume
 const MUSIC_KEY = "jb_music_state_v1";
 let jbSound = null;
 
 // state
 let sceneIndex = 0;
-let currentImg = null;
-let imgOk = false;
+let img = null, imgOk = false;
 let searchMode = false;
 let flashX = -999, flashY = -999;
-let cover; // black overlay with a circular hole
+let cover; // overlay we punch a hole in
 
-// buttons / inputs
-let btnSearch, btnNext, btnBack;
-let guessForm, guessInput, guessFeedback;
+// ui
+let btnSearch, btnNext, btnBack, guessForm, guessInput, guessFeedback;
 
 function preload() {
   if (typeof loadSound === "function") {
@@ -37,28 +32,26 @@ function preload() {
 }
 
 function setup() {
-  const c = createCanvas(W, H);
-  c.parent("sketch");
+  // responsive canvas
+  const w = constrain(int(windowWidth * 0.92), 320, 650);
+  const h = constrain(int(windowHeight * 0.78), 420, 820);
+  createCanvas(w, h).parent("sketch");
+  cover = createGraphics(width, height);
+  textAlign(CENTER, CENTER);
 
+  // grab elements
   btnSearch = document.getElementById("search-mode");
   btnNext   = document.getElementById("next-memory");
   btnBack   = document.getElementById("back-home");
-
-  // NEW: guess UI refs
   guessForm     = document.getElementById("guess-form");
   guessInput    = document.getElementById("guess-input");
   guessFeedback = document.getElementById("guess-feedback");
 
-  textAlign(CENTER, CENTER);
-  cover = createGraphics(W, H);
-
+  // buttons
   if (btnSearch) {
     btnSearch.onclick = () => {
       searchMode = !searchMode;
-      if (searchMode && flashX < 0) {
-        flashX = width / 2;
-        flashY = height / 2;
-      }
+      if (searchMode && flashX < 0) { flashX = width/2; flashY = height/2; }
       btnSearch.textContent = searchMode ? "Exit Search Mode" : "Search for Clues";
     };
   }
@@ -67,32 +60,29 @@ function setup() {
     btnNext.onclick = () => {
       sceneIndex = (sceneIndex + 1) % SCENES.length;
       flashX = flashY = -999;
-      loadSceneImage(sceneIndex);
-      // reset guess UI
-      setFeedback("", "");
-      if (guessInput) guessInput.value = "";
-      if (guessInput) guessInput.focus();
+      loadScene();
+      feedback("", "");
+      if (guessInput) { guessInput.value = ""; guessInput.focus(); }
     };
   }
 
   if (btnBack) {
     btnBack.onclick = () => {
-      // save current music position so Home can resume
+      // save simple music state so Home can resume
       try {
         const prev = JSON.parse(localStorage.getItem(MUSIC_KEY) || "{}");
         const vol  = typeof prev.volume === "number" ? prev.volume : 0.5;
-        const state = {
-          playing: (jbSound?.isPlaying?.() ?? false) || prev.playing || false,
-          time:    jbSound?.currentTime ? jbSound.currentTime() : (prev.time || 0),
-          volume:  vol
-        };
-        localStorage.setItem(MUSIC_KEY, JSON.stringify(state));
+        localStorage.setItem(MUSIC_KEY, JSON.stringify({
+          playing: jbSound?.isPlaying?.() || false,
+          time: jbSound?.currentTime ? jbSound.currentTime() : (prev.time || 0),
+          volume: vol
+        }));
       } catch {}
       window.location.href = "HomePage.html";
     };
   }
 
-  //submit handler for guesses
+  // guess form
   if (guessForm) {
     guessForm.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -100,109 +90,102 @@ function setup() {
     });
   }
 
-  // Enter key UX: if user presses Enter in input, form submits anyway
-  // resume the music after first tap/click
+  // mobile autoplay unlock + resume
   document.addEventListener("pointerdown", () => {
     if (typeof getAudioContext === "function") getAudioContext().resume();
     resumeJB();
   }, { once: true });
 
-  // load first image
-  loadSceneImage(sceneIndex);
-  // small hint when page loads
-  setFeedback("Guess the city!", "hint");
+  // first scene
+  loadScene();
+  feedback("Guess the city!", "hint");
   if (guessInput) guessInput.focus();
 }
 
 function draw() {
   background(0);
 
-  // city photo
-  if (imgOk && currentImg) {
-    image(currentImg, 0, 0, width, height);
-  } else {
-    fill(220); noStroke(); textSize(18);
-    text(`Image not found:\n${SCENES[sceneIndex].bg}`, width/2, height/2);
-  }
+  // draw photo
+  if (imgOk && img) {
+  // scale factor so the whole photo fits
+  const scale = min(width / img.width, height / img.height);
+  const drawW = img.width * scale;
+  const drawH = img.height * scale;
+  const dx = (width - drawW) / 2;
+  const dy = (height - drawH) / 2;
+  image(img, dx, dy, drawW, drawH);
+}
 
-  // build the black cover
+  
+
+  // flashlight overlay (hole scales with canvas)
+  const hole = int(min(width, height) * 0.42);
   cover.clear();
   cover.background(0);
   if (searchMode) {
     cover.erase();
-    cover.circle(flashX, flashY, HOLE_DIAM);
+    cover.circle(flashX, flashY, hole);
     cover.noErase();
   }
-  image(cover, 0, 0, width, height);
+  image(cover, 0, 0);
 
-  fill(255); noStroke(); textSize(14);
+  // hint text
+  fill(255); noStroke();
+  textSize(constrain(int(min(width, height) * 0.032), 12, 18));
   text(searchMode ? "Drag or move to aim the flashlight" : "Click “Search for Clues”", width/2, 20);
 }
 
-// flashlight movement
-function mouseDragged() { if (searchMode) updateFlash(); }
-function mouseMoved()   { if (searchMode) updateFlash(); }
-function updateFlash()  { flashX = mouseX; flashY = mouseY; }
+// interaction 
+function mouseMoved()   { if (searchMode) setFlash(mouseX, mouseY); }
+function mouseDragged() { if (searchMode) setFlash(mouseX, mouseY); }
+function touchMoved()   { if (searchMode) setFlash(mouseX, mouseY); return false; }
+function setFlash(x, y) { flashX = x; flashY = y; }
 
-// helpers
-function loadSceneImage(i) {
-  const path = SCENES[i]?.bg;
-  if (!path) { currentImg = null; imgOk = false; return; }
-  currentImg = loadImage(path, () => imgOk = true, () => imgOk = false);
+//responsive resize 
+function windowResized() {
+  const w = constrain(int(windowWidth * 0.92), 320, 650);
+  const h = constrain(int(windowHeight * 0.78), 420, 820);
+  resizeCanvas(w, h);
+  cover = createGraphics(width, height);
+  if (searchMode && (flashX < 0 || flashY < 0)) { flashX = width/2; flashY = height/2; }
+}
+
+//helpers
+function loadScene() {
+  const path = SCENES[sceneIndex].bg;
+  img = null; imgOk = false;
+  img = loadImage(path, () => imgOk = true, () => imgOk = false);
 }
 
 function resumeJB() {
   if (!jbSound) return;
   const saved = JSON.parse(localStorage.getItem(MUSIC_KEY) || "{}");
   if (!saved.playing) return;
-  const vol = typeof saved.volume === "number" ? saved.volume : 0.5;
-  const cue = typeof saved.time === "number" ? saved.time : 0;
+  const vol = (typeof saved.volume === "number") ? saved.volume : 0.5;
+  const cue = (typeof saved.time === "number") ? saved.time : 0;
   if (!jbSound.isPlaying()) {
     jbSound.setVolume(vol);
     jbSound.play(0, 1, vol, cue);
   }
 }
 
-// Guessing Part
-function normalize(s) {
-  return (s || "").trim().toLowerCase().replace(/\s+/g, " ");
-}
+//guessing
+function normalize(s) { return (s || "").trim().toLowerCase().replace(/\s+/g, " "); }
 
 function checkGuess() {
   if (!guessInput) return;
   const user = normalize(guessInput.value);
-  if (!user) {
-    setFeedback("Type a city first.", "hint");
-    return;
-  }
+  if (!user) { feedback("Type a city first.", "hint"); return; }
 
-  const correctName = SCENES[sceneIndex].name;
-  const accepted = (ANSWERS[correctName] || [correctName.toLowerCase()]);
+  const correct = SCENES[sceneIndex].name;
+  const accepted = ANSWERS[correct] || [correct.toLowerCase()];
+  const ok = accepted.some(a => user === a);
 
-  const isCorrect = accepted.some(a => user === a);
-  if (isCorrect) {
-    setFeedback("✅ Correct!", "ok");
-  } else {
-    setFeedback("❌ Try again.", "no");
-  }
+  feedback(ok ? "✅ Correct!" : "❌ Try again.", ok ? "ok" : "no");
 }
 
-function setFeedback(msg, kind = "") {
+function feedback(msg, cls = "") {
   if (!guessFeedback) return;
   guessFeedback.textContent = msg;
-  guessFeedback.className = kind;
+  guessFeedback.className = cls;
 }
-
-// save position on leave
-window.addEventListener("beforeunload", () => {
-  try {
-    const prev = JSON.parse(localStorage.getItem(MUSIC_KEY) || "{}");
-    const vol  = typeof prev.volume === "number" ? prev.volume : 0.5;
-    const state = {
-      playing: jbSound?.isPlaying?.() || false,
-      time: jbSound?.currentTime ? jbSound.currentTime() : (prev.time || 0),
-      volume: vol
-    };
-    localStorage.setItem(MUSIC_KEY, JSON.stringify(state));
-  } catch {}
-});
