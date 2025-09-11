@@ -22,6 +22,11 @@ let searchMode = false;
 let flashX = -999, flashY = -999;
 let cover; // overlay we punch a hole in
 
+
+let solved = [];            
+let overlayAlpha = 255;     
+let overlayTarget = 255;   
+
 // ui
 let btnSearch, btnNext, btnBack, guessForm, guessInput, guessFeedback;
 
@@ -39,6 +44,11 @@ function setup() {
   cover = createGraphics(width, height);
   textAlign(CENTER, CENTER);
 
+  //init solved flags for each scene
+  solved = SCENES.map(() => false);
+  overlayAlpha = 255;
+  overlayTarget = 255;
+
   // grab elements
   btnSearch = document.getElementById("search-mode");
   btnNext   = document.getElementById("next-memory");
@@ -50,19 +60,29 @@ function setup() {
   // buttons
   if (btnSearch) {
     btnSearch.onclick = () => {
+      // disable search once scene is solved
+      if (solved[sceneIndex]) return;
       searchMode = !searchMode;
       if (searchMode && flashX < 0) { flashX = width/2; flashY = height/2; }
-      btnSearch.textContent = searchMode ? "Exit Search Mode" : "Search for Clues";
+      updateSearchButton();
     };
+    updateSearchButton();
   }
 
   if (btnNext) {
     btnNext.onclick = () => {
       sceneIndex = (sceneIndex + 1) % SCENES.length;
+      // reset for new city
+      searchMode = false;
+      overlayAlpha = 255;
+      overlayTarget = 255;
       flashX = flashY = -999;
-      loadScene();
       feedback("", "");
       if (guessInput) { guessInput.value = ""; guessInput.focus(); }
+      loadScene();
+      updateSearchButton();
+      // optional hint for new city
+      feedback("Guess the city!", "hint");
     };
   }
 
@@ -105,34 +125,58 @@ function setup() {
 function draw() {
   background(0);
 
-  // draw photo
+  // draw photo (fit inside canvas)
   if (imgOk && img) {
-  // scale factor so the whole photo fits
-  const scale = min(width / img.width, height / img.height);
-  const drawW = img.width * scale;
-  const drawH = img.height * scale;
-  const dx = (width - drawW) / 2;
-  const dy = (height - drawH) / 2;
-  image(img, dx, dy, drawW, drawH);
-}
-
-  
-
-  // flashlight overlay (hole scales with canvas)
-  const hole = int(min(width, height) * 0.42);
-  cover.clear();
-  cover.background(0);
-  if (searchMode) {
-    cover.erase();
-    cover.circle(flashX, flashY, hole);
-    cover.noErase();
+    const scale = min(width / img.width, height / img.height);
+    const drawW = img.width * scale;
+    const drawH = img.height * scale;
+    const dx = (width - drawW) / 2;
+    const dy = (height - drawH) / 2;
+    image(img, dx, dy, drawW, drawH);
+  } else {
+    // fallback if image not loaded
+    fill(40); rect(0, 0, width, height);
+    fill(220); text("Loading...", width/2, height/2);
   }
-  image(cover, 0, 0);
 
-  // hint text
+  // animate overlay alpha toward the target (nice fade on reveal)
+  overlayAlpha = lerp(overlayAlpha, overlayTarget, 0.12);
+
+  // flashlight overlay logic
+  // If current scene is NOT solved:
+  if (!solved[sceneIndex]) {
+    // build the cover
+    cover.clear();
+    cover.background(0);
+
+    if (searchMode) {
+      // punch a circular hole where the flashlight is
+      const hole = int(min(width, height) * 0.42);
+      cover.erase();
+      cover.circle(flashX, flashY, hole);
+      cover.noErase();
+    }
+    // draw the cover fully (still dark outside the hole)
+    image(cover, 0, 0);
+  } else {
+    // Scene solved: fade the veil to fully transparent (no flashlight hole)
+    if (overlayAlpha > 1) {
+      noStroke();
+      fill(0, constrain(overlayAlpha, 0, 255));
+      rect(0, 0, width, height);
+    }
+  }
+
+  // hint text (top)
   fill(255); noStroke();
   textSize(constrain(int(min(width, height) * 0.032), 12, 18));
-  text(searchMode ? "Drag or move to aim the flashlight" : "Click “Search for Clues”", width/2, 7);
+  let hint = "";
+  if (!solved[sceneIndex]) {
+    hint = searchMode ? "Drag or move to aim the flashlight" : "Click “Search for Clues”";
+  } else {
+    hint = "Unlocked! Click Next ▶ when ready";
+  }
+  text(hint, width/2, 7);
 }
 
 // interaction 
@@ -155,6 +199,19 @@ function loadScene() {
   const path = SCENES[sceneIndex].bg;
   img = null; imgOk = false;
   img = loadImage(path, () => imgOk = true, () => imgOk = false);
+
+  // on load of current scene, if it was previously solved,
+  // keep it revealed. Otherwise, start covered.
+  if (solved[sceneIndex]) {
+    overlayAlpha = 0;
+    overlayTarget = 0;
+    searchMode = false;
+  } else {
+    overlayAlpha = 255;
+    overlayTarget = 255;
+    searchMode = false;
+  }
+  updateSearchButton();
 }
 
 function resumeJB() {
@@ -181,11 +238,32 @@ function checkGuess() {
   const accepted = ANSWERS[correct] || [correct.toLowerCase()];
   const ok = accepted.some(a => user === a);
 
-  feedback(ok ? "✅ Correct!" : "❌ Try again.", ok ? "ok" : "no");
+  if (ok) {
+    //mark solved and fade the veil away
+    solved[sceneIndex] = true;
+    overlayTarget = 0;
+    searchMode = false;
+    updateSearchButton();
+  }
+  feedback(ok ? "✅ Correct! Scene unlocked" : "❌ Try again.", ok ? "ok" : "no");
 }
 
 function feedback(msg, cls = "") {
   if (!guessFeedback) return;
   guessFeedback.textContent = msg;
   guessFeedback.className = cls;
+}
+
+// keep the search button label in sync with state
+function updateSearchButton() {
+  if (!btnSearch) return;
+  if (solved[sceneIndex]) {
+    btnSearch.textContent = "Scene Revealed";
+    btnSearch.disabled = true;      // no searching once solved
+    btnSearch.classList.add("disabled");
+  } else {
+    btnSearch.disabled = false;
+    btnSearch.classList.remove("disabled");
+    btnSearch.textContent = searchMode ? "Exit Search Mode" : "Search for Clues";
+  }
 }
